@@ -1,0 +1,27 @@
+name: Histogram import check
+on:
+  push:
+    branches: [ci/histogram-import-shared-buffer]
+permissions:
+  contents: read
+jobs:
+  histogram:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/install-clang
+        with:
+          clang-version: '19'
+      - name: Build patched Node
+        env:
+          CC: clang-19
+          CXX: clang++-19
+        run: |
+          ./configure --without-intl --without-npm
+          make -j4
+      - name: Run histogram tests
+        run: |
+          python3 tools/test.py --shell=out/Release/node -j2 parallel/test-perf-hooks-histogram*
